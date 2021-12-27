@@ -10,6 +10,8 @@
 library(shiny)
 library(shinydashboard)
 
+df1 = read.csv("vgsales.csv")
+
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
   dashboardHeader(title = "Analysis on the Video Games Industry and It's Growth", 
