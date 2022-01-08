@@ -10,7 +10,7 @@
 library(shiny)
 library(shinydashboard)
 
-df1 = read.csv("vgsales.csv")
+df1 = read.csv("VideoGamesSales/reactives/vgsales.csv")
 
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(
@@ -20,7 +20,8 @@ shinyUI(dashboardPage(
     sidebarMenu(
       menuItem("Overview", tabName = "Overview"),
       menuItem("Consoles", tabName = "Consoles"),
-      menuItem("Dota2", tabName = "Dota2")
+      menuItem("Dota2", tabName = "Dota2"),
+      menuItem("Players", tabName = "Players")
     )
   ),
   
@@ -43,8 +44,60 @@ shinyUI(dashboardPage(
               fluidPage(
                 h3("Dota 2 Journey"),
                 h4("How did Dota start and where it is now.")
-              )
-      )
+              )),
+      
+      tabItem(tabName = "Players",
+              navbarPage("Player's Earnings",
+                         tabPanel(
+                           "Dataset",
+                           fluidPage(
+                             selectInput("showYear",
+                                         label = ("Select a Year"),
+                                         choices = unique(esport_earnings_players$Year)),
+                             DTOutput("earnings_table"),
+                             tags$div(id = "plot", style = "width: 100%",
+                                      tags$table(
+                                        id = "ggPlot", 
+                                        tags$td(
+                                          h3("Average Prize Money"),
+                                          plotOutput("averagePrizeMoney")
+                                        ),
+                                        
+                                        tags$td(
+                                          h3("Prize Money Distribution"),
+                                          plotOutput("prizeDistribution")
+                                        )
+                                      ),
+                                      ),
+                           )
+                         ),
+                         tabPanel(
+                           "Summary",
+                           fluidPage(
+                             theme = "custom.css",
+                             selectInput("selected_year",
+                                         label = ("Select a Year"),
+                                         choices = c("All", unique(esport_earnings_players$Year))
+                             ),
+                             wellPanel(
+                               tags$table(
+                                id = "tableDashboard", 
+                                tags$td(
+                                  h3(textOutput("totalPlayer")),
+                                  h4("Total Players")),
+                                
+                                tags$td(
+                                  h3(textOutput("totalPrizeMoney")),
+                                  h4("Total Prize Money")),
+                                
+                                tags$td(
+                                  h3(textOutput("overallPrizeMoney")),
+                                  h4("Overall Prize Money"))
+                               )
+                             ),
+                           )
+                           )))
+      
     )
   )
 )
