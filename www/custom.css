@@ -1,0 +1,31 @@
+h4 {
+  color: rebeccapurple;
+  text-align: center;
+}
+
+h2 {
+  text-align: center;
+}
+
+body {
+  font-family: helvetica;
+}
+
+table, tr, td {border: none; padding: 50px, text-align: center;}
+
+#dashboardStyle {
+  border: none; padding 30px, text-align: center
+}
+
+#ggPlot {
+  width: 80%; border: none; padding: 30px;
+}
+
+#tableDashboard {
+  width: 100%;
+  border: none; 
+  padding: 30px;
+  text-align: center;
+}
+
+h3#
