@@ -18,7 +18,7 @@ table, tr, td {border: none; padding: 50px, text-align: center;}
 }
 
 #ggPlot {
-  width: 100%; border: none; padding: 30px;
+  width: 80%; border: none; padding: 30px;
 }
 
 #tableDashboard {

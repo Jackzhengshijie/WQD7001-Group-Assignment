@@ -49,7 +49,7 @@ shinyUI(dashboardPage(
       tabItem(tabName = "Players",
               navbarPage("Player's Earnings",
                          tabPanel(
-                           "Dataset",
+                           "EDA",
                            fluidPage(
                              selectInput("showYear",
                                          label = ("Select a Year"),
@@ -59,13 +59,18 @@ shinyUI(dashboardPage(
                                       tags$table(
                                         id = "ggPlot", 
                                         tags$td(
-                                          h3("Average Prize Money"),
+                                          h4("Average Prize Money From 1998-2020"),
                                           plotOutput("averagePrizeMoney")
                                         ),
                                         
                                         tags$td(
-                                          h3("Prize Money Distribution"),
+                                          h4("Prize Money Distribution"),
                                           plotOutput("prizeDistribution")
+                                        ),
+                                        
+                                        tags$td(
+                                          h4("Total Player Particapted"),
+                                          plotOutput("totalPlayers")
                                         )
                                       ),
                                       ),

@@ -128,4 +128,20 @@ shinyServer(function(input, output) {
       theme(legend.position = "bottom")
   })
   
+  output$totalPlayers <- renderPlot({
+    
+    # Total players from 1998-2020
+    players <- esport_earnings %>%
+      group_by(Year) %>%
+      summarize(total_playerName = length(PlayerName))
+    
+    ggplot(data.frame(x = players$total_playerName), aes(x = x)) +
+      geom_histogram(binwidth = 10,
+                     fill = "#1D7685",
+                     color = "white") +
+      ylab("Frequency") +
+      xlab("Total Players")
+  
+  })
+  
 })
