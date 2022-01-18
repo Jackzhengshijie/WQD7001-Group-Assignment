@@ -8,14 +8,25 @@
 #
 
 library(shiny)
+library(shinydashboard)
+library("DT")
+library("tidyverse")
+library(readr)
 library(readxl)
 library(dplyr)
 library(scales)
 library(reshape)
-library(DT)
 library(stringr)
 
-# upload dota 2 data and clean
+# Load dataset player earnings
+# import data and rename column names
+names <- c('Year', 'PlayerID', 'PlayerName', 'TotalPrizeMoneyYear', 'OverallPrizeMoney', 'TotalPercentage')
+esport_earnings_players <- read_excel("C:\\Users\\KSAR\\Downloads\\WQD7001-Group-Assignment-main (1)\\WQD7001-Group-Assignment-main\\eSports Earnings 1998-2020.xlsx", sheet = "Top 100 Players 1998-2020", col_names = names, skip = 1)
+esport_earnings <- esport_earnings_players %>%
+  mutate(PlayerID=as.factor(PlayerID), PlayerName=as.factor(PlayerName), 
+         TotalPrizeMoneyYear=as.numeric(TotalPrizeMoneyYear), OverallPrizeMoney=as.numeric(OverallPrizeMoney))
+
+# Kamal: upload dota 2 data and clean
 
 dota2data = read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\dota2shiny\\Largest Overall Prize Pools in Esports.xlsx")
 dota2data = as.data.frame(dota2data)
@@ -44,7 +55,7 @@ yearExtract <- function(string) {
 dota2data$Year = yearExtract(as.character(dota2data$TournamentName))
 dota2data
 
-# END ------------------------------------------------------------------------------------------------------------------------
+# END dota 2------------------------------------------------------------------------------------------------------------------------
 
 ## Upload vgsales and steam top 100 data and clean
 
@@ -55,19 +66,21 @@ vgs$Genre = as.factor(vgs$Genre)
 
 steam100 = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\dota2shiny\\steam_top_100.csv")
 
+# END vgs ---
+
 # Define server logic required to draw a histogram
-server = function(input, output) {
+shinyServer(function(input, output) {
   
-  ## Render dota 2 table output ----------------------------------------------------------------------------------
+  ## Kamal: Render dota 2 table output ----------------------------------------------------------------------------------
   
   output$table1 = DT::renderDataTable({
     if (input$dota2input != "All"){
       dota2data = filter(dota2data, Game == input$dota2input)
     }
-
+    
     DT::datatable(dota2data, options = list(orderClasses = TRUE))
   })
-    
+  
   # Plot 1
   
   output$barplot = renderPlot({
@@ -75,7 +88,7 @@ server = function(input, output) {
     if (input$dota2input != "All"){
       dota2data = filter(dota2data, Game == input$dota2input)
     }
-
+    
     groupdata = group_by(dota2data, PrizePool) %>%
       arrange(desc(PrizePool))
     
@@ -96,7 +109,7 @@ server = function(input, output) {
     if (input$dota2input != "All"){
       dota2data = filter(dota2data, Game == input$dota2input)
     }
-
+    
     groupdata = group_by(dota2data, PrizePerPlayer) %>%
       arrange(desc(Year))
     
@@ -110,11 +123,12 @@ server = function(input, output) {
       theme_light(base_size = 15) + 
       theme(axis.text.x = element_text(angle = 0, hjust = 1))
   })
-    
+  
   # END -----------------------------------------------------------------------------------------------------------------
   
-  
   ## Render vgsales output --------------------------------------------------------------------------------------------
+  
+  # Plot data table
   
   output$tablevgsales = DT::renderDataTable({
     if (input$vgsalesinput != 'All'){
@@ -130,6 +144,8 @@ server = function(input, output) {
     DT::datatable(vgs, options = list(orderClasses = TRUE))
   })
   
+  # Plot 1
+  
   output$GlobalSales = renderPlot({
     if (input$vgsalesinput != 'All'){
       vgs = vgs %>% 
@@ -138,13 +154,14 @@ server = function(input, output) {
     
     ggplot(vgs, aes(reorder(Genre, Global_Sales))) + 
       geom_bar(aes(weight = Global_Sales)) +
-      ggtitle("Global Sales by Platform") + 
+      ggtitle("Global Sales by Genre") + 
       xlab('Genre') + 
       ylab('Global Sales in million') + 
       theme_classic(base_size = 15) +
       theme(axis.text.x = element_text(angle = 60, hjust = 1))
   })
   
+  # Plot 2
   
   output$genre = renderPlot({
     if (input$vginput2 != 'All'){
@@ -154,15 +171,136 @@ server = function(input, output) {
     
     ggplot(data = vgs, aes(x = Platform, y = Global_Sales, fill = input$vginput2)) +
       geom_col() +
-      ggtitle("Global Sales by Genre") + 
+      ggtitle("Global Sales by Platform") + 
       xlab('Platform') + 
       ylab('Global_Sales in million') +
       guides(fill = guide_legend(title = input$vginput2)) +
       theme_classic(base_size = 15) +
       theme(axis.text.x = element_text(angle = 60, hjust = 1))
   })
-
-# END ------------------------------------------------------------------------------------------------------------------------     
+  
+  # END ---
+  
+  ## Aby: render output
+  
+  output$plot = renderPlot({
+    plot(df1$Global_Sales, df1[[input$features]],
+         xlab = "Component",
+         ylab = "Global Sales, in millions USD")
     
+    output  
+  })
+  
+  output$earnings_table <- renderDT({
     
-}
+    esport_earnings %>%
+      select(PlayerID, PlayerName, TotalPrizeMoneyYear, OverallPrizeMoney, TotalPercentage) %>%
+      arrange(desc(TotalPrizeMoneyYear)) %>%
+      datatable(rownames = input$showYear,
+                extensions = "Responsive")
+    
+  })
+  
+  # Overall players by year
+  output$totalPlayer <- renderText({
+    if(input$selected_year == "All") {
+      
+      total_players_overall = esport_earnings$PlayerName
+      
+      total_players_overall = length(total_players_overall)
+      
+      print(total_players_overall)
+      
+      
+    } else {
+      
+      total_players <- esport_earnings %>% 
+        select(Year, PlayerName) %>%
+        filter(Year == input$selected_year)
+      
+      print(length(unique(total_players$PlayerName)))
+      
+    }
+  })
+  
+  # Overall total prize money by year
+  output$totalPrizeMoney <- renderText({
+    
+    if(input$selected_year == "All") {
+      
+      totalPrizeMoneyAll = sum(esport_earnings$TotalPrizeMoneyYear)
+      
+      print(paste("$", totalPrizeMoneyAll, sep = ""))
+      
+    } else {
+      
+      total = esport_earnings %>%
+        group_by(Year) %>%
+        summarise(total = sum(TotalPrizeMoneyYear)) %>%
+        filter(Year==input$selected_year) %>%
+        select(total)
+      
+      print(paste("$", as.character(total), sep=""))
+    }
+      
+  })
+  
+  # Overall prize money by year
+  output$overallPrizeMoney <- renderText({
+    
+    if(input$selected_year == "All") {
+      
+      overallPrizeMoney = sum(esport_earnings$OverallPrizeMoney)
+      
+      print(paste("$", overallPrizeMoney, sep = ""))
+      
+    } else {
+      
+      total = esport_earnings %>%
+        group_by(Year) %>%
+        summarise(total = sum(OverallPrizeMoney)) %>%
+        filter(Year==input$selected_year) %>%
+        select(total)
+      
+      print(paste("$", as.character(total), sep=""))
+    }
+    
+  })
+  
+  # Average prize money from 1998-2020
+  output$averagePrizeMoney <- renderPlot({
+    esport_earnings %>%
+      group_by(Year) %>%
+      summarize(average_prizeMoney=mean(TotalPrizeMoneyYear)) %>%
+      ggplot() +
+      geom_col(mapping = aes(x=Year, y=average_prizeMoney))
+  })
+  
+  output$prizeDistribution <- renderPlot({
+    ggplot(esport_earnings,
+           aes(TotalPrizeMoneyYear, OverallPrizeMoney, color = Year)) +
+      geom_point(size = 3) +
+      geom_smooth(method = lm) +
+      geom_density2d(alpha = .5) +
+      theme(legend.position = "bottom")
+  })
+  
+  output$totalPlayers <- renderPlot({
+    
+    # Total players from 1998-2020
+    players <- esport_earnings %>%
+      group_by(Year) %>%
+      summarize(total_playerName = length(PlayerName))
+    
+    ggplot(data.frame(x = players$total_playerName), aes(x = x)) +
+      geom_histogram(binwidth = 10,
+                     fill = "#1D7685",
+                     color = "white") +
+      ylab("Frequency") +
+      xlab("Total Players")
+  
+  })
+  
+  # END ---
+  
+})
