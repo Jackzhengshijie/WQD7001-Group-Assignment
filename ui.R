@@ -9,101 +9,64 @@
 
 library(shiny)
 library(shinydashboard)
+library(ggplot2)
 
-df1 = read.csv("VideoGamesSales/reactives/vgsales.csv")
+# Define UI for application
+ui = fluidPage(
 
-# Define UI for application that draws a histogram
-shinyUI(dashboardPage(
-  dashboardHeader(title = "Analysis on the Video Games Industry and It's Growth", 
-                  titleWidth = 550),
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem("Overview", tabName = "Overview"),
-      menuItem("Consoles", tabName = "Consoles"),
-      menuItem("Dota2", tabName = "Dota2"),
-      menuItem("Players", tabName = "Players")
-    )
-  ),
-  
-  dashboardBody(
-    tabItems(
-      tabItem(tabName = "Overview",
-              box(plotOutput("plot"), width = 8),
-              box(
-                selectInput("features", "Features:",
-                            c("Name", "Platform", "Global_Sales", 
-                              "NA_Sales", "JP_Sales", "EU_Sales", "Other_Sales")), width = 4)
+    # Application title
+    titlePanel("Analysis on the Video Games Industry and It's Growth"),
+    
+    # Dota 2 storyline
+    tabsetPanel(
+      tabPanel(
+        title = "dota 2",
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(
+              inputId = "dota2input",
+              label = "Game",
+              choices = c("All", "Dota 2", "Fortnite", "League of Legends", "Arena Of Valor", "PLAYERUNKNOWN'S BATTLEGROUNDS", 'Overwatch', 'SMITE', 'Rainbow Six Siege', 'Call of Duty: Modern Warfare', "PLAYERUNKNOWN'S BATTLEGROUNDS Mobile", 'Counter-Strike: Global Offensive')
+            ),
+          ),
+          mainPanel(
+            title = 'Dota 2', fluid= TRUE, DT::dataTableOutput('table1'),
+            plotOutput('barplot'),
+            plotOutput('lineplot')
+          ),
+        )
       ),
       
-      tabItem(tabName = "Consoles",
-              fluidPage(
-                h3("Type of Consoles")
-              )),
-      
-      tabItem(tabName = "Dota2",
-              fluidPage(
-                h3("Dota 2 Journey"),
-                h4("How did Dota start and where it is now.")
-              )),
-      
-      tabItem(tabName = "Players",
-              navbarPage("Player's Earnings",
-                         tabPanel(
-                           "EDA",
-                           fluidPage(
-                             selectInput("showYear",
-                                         label = ("Select a Year"),
-                                         choices = unique(esport_earnings_players$Year)),
-                             DTOutput("earnings_table"),
-                             tags$div(id = "plot", style = "width: 100%",
-                                      tags$table(
-                                        id = "ggPlot", 
-                                        tags$td(
-                                          h4("Average Prize Money From 1998-2020"),
-                                          plotOutput("averagePrizeMoney")
-                                        ),
-                                        
-                                        tags$td(
-                                          h4("Prize Money Distribution"),
-                                          plotOutput("prizeDistribution")
-                                        ),
-                                        
-                                        tags$td(
-                                          h4("Total Player Particapted"),
-                                          plotOutput("totalPlayers")
-                                        )
-                                      ),
-                                      ),
-                           )
-                         ),
-                         tabPanel(
-                           "Summary",
-                           fluidPage(
-                             theme = "custom.css",
-                             selectInput("selected_year",
-                                         label = ("Select a Year"),
-                                         choices = c("All", unique(esport_earnings_players$Year))
-                             ),
-                             wellPanel(
-                               tags$table(
-                                id = "tableDashboard", 
-                                tags$td(
-                                  h3(textOutput("totalPlayer")),
-                                  h4("Total Players")),
-                                
-                                tags$td(
-                                  h3(textOutput("totalPrizeMoney")),
-                                  h4("Total Prize Money")),
-                                
-                                tags$td(
-                                  h3(textOutput("overallPrizeMoney")),
-                                  h4("Overall Prize Money"))
-                               )
-                             ),
-                           )
-                           )))
-      
-    )
-  )
+      # Video Games story line
+      tabPanel(
+        title = 'video games sales',
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(
+              inputId = "vgsalesinput",
+              label = 'Platform',
+              choices = c('All', 'Wii', 'WiiU', 'NES', 'GB', 'DS', 'X360', 'PS2', 'PS3', 'PS4', 'GBA', 'SNES', '3DS')
+            ),
+            selectInput(
+              inputId = 'vginput2',
+              label = 'Genre',
+              choices = c('All', 'Action', 'Adventure', 'Fighting', 'Misc', 'Platform', 'Puzzle', 'Racing', 'Role-Playing', 'Shooter', 'Simulation', 'Sports', 'Strategy')
+            )
+            
+          ),
+          
+          mainPanel(
+            titles = "video games sales", DT::dataTableOutput('tablevgsales'),
+            plotOutput('GlobalSales'),
+            plotOutput('genre')
+          )
+        )
+    ),
+    
+    
+    # 
+
+    
+    
 )
 )
