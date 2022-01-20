@@ -11,31 +11,48 @@ library(shiny)
 library(shinydashboard)
 library("DT")
 library("tidyverse")
-library(readr)
 library(readxl)
-library(dplyr)
 library(scales)
 library(reshape)
-library(stringr)
+library(ggplot2)
 
 # Load dataset player earnings
-# import data and rename column names
+# Aby: import data and rename column names
 names <- c('Year', 'PlayerID', 'PlayerName', 'TotalPrizeMoneyYear', 'OverallPrizeMoney', 'TotalPercentage')
-esport_earnings_players <- read_excel("C:\\Users\\KSAR\\Downloads\\WQD7001-Group-Assignment-main (1)\\WQD7001-Group-Assignment-main\\eSports Earnings 1998-2020.xlsx", sheet = "Top 100 Players 1998-2020", col_names = names, skip = 1)
+esport_earnings_players <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\eSports Earnings 1998-2020.xlsx", sheet = "Top 100 Players 1998-2020", col_names = names, skip = 1)
 esport_earnings <- esport_earnings_players %>%
   mutate(PlayerID=as.factor(PlayerID), PlayerName=as.factor(PlayerName), 
          TotalPrizeMoneyYear=as.numeric(TotalPrizeMoneyYear), OverallPrizeMoney=as.numeric(OverallPrizeMoney))
 
+# For vgsales input
+df1 = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\vgsales.csv")
+
+# Iesha: For Team and countries input
+topteams <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\topteamscleaned.xlsx")
+yearchoice <- c("All", unique(topteams$Year))
+teamchoice <- c("All", unique(topteams$Team))
+
+topcountries <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\topcountriescleaned2.xlsx")
+colnames(topcountries) = c('Year', 'Country', 'TotalPrizeMoney', 'NumberofPlayers')
+
 # Kamal: upload dota 2 data and clean
 
-dota2data = read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\dota2shiny\\Largest Overall Prize Pools in Esports.xlsx")
+dota2data = read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\Largest Overall Prize Pools in Esports.xlsx")
 dota2data = as.data.frame(dota2data)
-colnames(dota2data) = c("No.", "TournamentName", "PrizePool", "Game", "NumberOfTeams", "NumberOfPlayers")
 dota2data = select(dota2data, -c("No.")) 
-dota2data$PrizePool = as.integer(dota2data$PrizePool)
 
-dota2data = dota2data %>% mutate(PrizePerPlayer = PrizePool / NumberOfPlayers) %>% # create new prize per player column
-  mutate(PrizePerTeam = PrizePool / NumberOfTeams) # Create new prize per team column
+dota2data = dota2data %>%
+  mutate(NumberOfPlayers2 = ifelse(dataset$NumberOfPlayers == 0, 2, dataset$NumberOfPlayers))
+  
+dota2data = dota2data %>%
+  mutate(NumberofTeams4 = ifelse(is.na(dataset$NumberOfTeams), 1, dataset$NumberOfTeams))
+
+colnames(dota2data) = c('TournamentName', "PrizePool", "Game", "NumberOfTeams", "NumberOfPlayers", "NumberofPlayers2", 'NumberofTeams2')
+
+dota2data$NumberofTeams2 = as.numeric(dota2data$NumberofTeams2)
+
+dota2data = dota2data %>% mutate(PrizePerPlayer = PrizePool / NumberofPlayers2) %>% # create new prize per player column
+  mutate(PrizePerTeam = PrizePool / NumberofTeams2) # Create new prize per team column
 
 dota2data$PrizePerPlayer = as.integer(dota2data$PrizePerPlayer)
 dota2data$PrizePerTeam = as.integer(dota2data$PrizePerTeam)
@@ -55,76 +72,308 @@ yearExtract <- function(string) {
 dota2data$Year = yearExtract(as.character(dota2data$TournamentName))
 dota2data
 
-# END dota 2------------------------------------------------------------------------------------------------------------------------
+# END dota 2 clean -------------------------------------------------------------------------------------------------------------------
 
-## Upload vgsales and steam top 100 data and clean
+## Upload vgsales and clean
 
-vgs = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\dota2shiny\\vgsales.csv")
+vgs = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\vgsales.csv")
 colnames(vgs)
 str(vgs)
 vgs$Genre = as.factor(vgs$Genre)
 
-steam100 = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\dota2shiny\\steam_top_100.csv")
-
 # END vgs ---
 
-# Define server logic required to draw a histogram
+# Define server logic
 shinyServer(function(input, output) {
   
-  ## Kamal: Render dota 2 table output ----------------------------------------------------------------------------------
+  # Iesha: Team and Countries
   
-  output$table1 = DT::renderDataTable({
-    if (input$dota2input != "All"){
-      dota2data = filter(dota2data, Game == input$dota2input)
-    }
+  #DATATABLE
+  output$teamtable <- DT::renderDataTable({
     
-    DT::datatable(dota2data, options = list(orderClasses = TRUE))
+    if (input$selectYear == "All" & input$teamInput == "All"){
+      result <- topteams
+    }
+    else if (input$selectYear == "All" & input$teamInput != "All"){
+      df1 <- topteams %>%
+        filter(Team %in% input$teamInput)
+      result1 <- df1
+    }
+    else if(input$selectYear != "All" & input$teamInput == "All"){
+      df2 <- topteams %>%
+        filter(Year %in% input$selectYear)
+      result2 <- subset(df2)
+    }
+    else{
+      df3 <- topteams %>%
+        filter(Year %in% input$selectYear & Team %in% input$teamInput)
+      result3 <- subset(df3)
+    }
   })
   
-  # Plot 1
+  # vgsales dashboard ---
   
-  output$barplot = renderPlot({
+  output$totalgames <- renderText({
+    print(comma(sum(length(unique(vgs$Name)))))
     
-    if (input$dota2input != "All"){
-      dota2data = filter(dota2data, Game == input$dota2input)
+  })
+  
+  output$totalplatform <- renderText({
+    print(comma(sum(length(unique(vgs$Platform)))))
+    
+  })
+  
+  output$totalpublisher <- renderText({
+    print(comma(sum(length(unique(vgs$Publisher)))))
+    
+  })
+  
+  output$totalgenre <- renderText({
+    print(comma(sum(length(unique(vgs$Genre)))))
+    
+  })
+  
+  # END ---
+  
+  # Plotting top earnings by TEAMS bar chart
+  output$barteam <- renderPlot({
+    if (input$selectYear != "All"){
+      topteams = topteams %>%
+        filter(Year == input$selectYear)
     }
     
-    groupdata = group_by(dota2data, PrizePool) %>%
-      arrange(desc(PrizePool))
+    topteams[order(topteams$TotalPrizeMoneyYear, decreasing = TRUE),] %>%
+      slice(1:15) %>%
+      ggplot(aes(x = reorder(Team, TotalPrizeMoneyYear), y = TotalPrizeMoneyYear)) + 
+      geom_bar(stat = "identity", 
+               fill = rainbow(n = 15 , start = .55, end = 1)) + 
+      scale_y_continuous(labels = comma) +
+      coord_flip() +
+      ggtitle("Top Earnings by Team") +
+      labs(x = "Team Name", y = "Total Winnings") +
+      theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20))
     
-    ggplot(groupdata, aes(reorder(TournamentName, PrizePool))) + 
-      geom_bar(aes(weight = PrizePool), fill = 'tomato1') + 
+  })
+  
+  ##ABORT PLOT TAK JADI
+  output$barplot2 = renderPlot({
+    
+    if (input$teamInput != "All" ){
+      topteams = filter(topteams, Team == input$teamInput)
+    }
+    
+    groupdata = group_by(topteams, TotalPrizeMoneyYear) %>%
+      arrange(desc(TotalPrizeMoneyYear))
+    
+    ggplot(groupdata, aes(reorder(Year, TotalPrizeMoneyYear))) + 
+      geom_bar(aes(weight = TotalPrizeMoneyYear), fill = 'tomato1') + 
       scale_y_continuous(labels = comma) +
       coord_flip() + 
-      ggtitle("Tournaments") + 
-      xlab("Tournament Name") + 
-      ylab("Prize Pool") + 
-      theme_bw(base_size = 16)
+      ggtitle("Top Teams") + 
+      xlab("Year") + 
+      ylab("Winnings") + 
+      theme_bw(base_size = 16) +
+      theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20))
   })
   
-  # Plot 2
-  
-  output$lineplot = renderPlot({
+  output$countrytable <- DT::renderDataTable({
     
-    if (input$dota2input != "All"){
-      dota2data = filter(dota2data, Game == input$dota2input)
+    if (input$selectyearcountry == "All" & input$countryInput == "All"){
+      result <- topcountries
+    }
+    else if (input$selectyearcountry == "All" & input$countryInput != "All"){
+      df1 <- topcountries %>%
+        filter(Country %in% input$countryInput)
+      result1 <- df1
+    }
+    else if(input$selectyearcountry != "All" & input$countryInput == "All"){
+      df2 <- topcountries %>%
+        filter(Year %in% input$selectyearcountry)
+      result2 <- subset(df2)
+    }
+    else{
+      df3 <- topcountries %>%
+        filter(Year %in% input$selectyearcountry & Country %in% input$countryInput)
+      result3 <- subset(df3)
     }
     
-    groupdata = group_by(dota2data, PrizePerPlayer) %>%
-      arrange(desc(Year))
-    
-    ggplot(groupdata, aes(reorder(Year, PrizePerPlayer))) + 
-      geom_bar(aes(weight = PrizePerPlayer), fill = 'blue') +
-      scale_y_continuous(labels = comma) + 
-      coord_flip() + 
-      ggtitle("Over the years") + 
-      xlab("Year") + 
-      ylab("Prize Per Player") + 
-      theme_light(base_size = 15) + 
-      theme(axis.text.x = element_text(angle = 0, hjust = 1))
   })
   
-  # END -----------------------------------------------------------------------------------------------------------------
+  # Overall number of players by year DONE
+  output$totalPlayer2 <- renderText({
+    if(input$selectyearcountry == "All" & input$countryInput == 'All') {
+      
+      total_players_overall = sum(topcountries$NumberofPlayers)
+      print(comma(total_players_overall))
+      
+      
+    } else if(input$selectyearcountry != "All" & input$countryInput != 'All'){
+      
+      total_players <- topcountries %>% 
+        select(Year, Country, NumberofPlayers) %>%
+        filter(Year == input$selectyearcountry) %>%
+        filter(Country == input$countryInput)
+      
+      print(comma(sum(total_players$NumberofPlayers)))
+      
+    } else if(input$selectyearcountry != "All" & input$countryInput == 'All'){
+      
+      total_players = topcountries %>%
+        select(Year, Country, NumberofPlayers) %>%
+        filter(Year == input$selectyearcountry)
+      
+      print(comma(sum(total_players$NumberofPlayers)))
+      
+    }else if(input$selectyearcountry == "All" & input$countryInput != 'All'){
+      total_players = topcountries %>%
+        select(Year, Country, NumberofPlayers) %>%
+        filter(Country == input$countryInput)
+      
+      print(comma(sum(total_players$NumberofPlayers)))
+            
+    }
+  })
+  
+  # total number of countries participated by year DONE
+  output$totalCountry <- renderText({
+    if(input$selectyearcountry == "All" & input$countryInput == 'All') {
+      
+      sumofcountriesbyyear = length(topcountries$Country)
+      print(comma(sumofcountriesbyyear))
+      
+      
+    } else if(input$selectyearcountry != "All" & input$countryInput != 'All'){
+      
+      numofcountriesbyyear <- topcountries %>% 
+        select(Year, Country) %>%
+        filter(Country == input$countryInput) %>%
+        filter(Year == input$selectyearcountry)
+      
+      print(comma(length(unique(numofcountriesbyyear$Country))))
+      
+    } else if(input$selectyearcountry != "All" & input$countryInput == 'All'){
+      
+      numofcountriesbyyear = topcountries %>%
+        select(Year, Country) %>%
+        filter(Year == input$selectyearcountry)
+      
+      print(comma(length(unique(numofcountriesbyyear$Country))))
+      
+    } else if(input$selectyearcountry == "All" & input$countryInput != 'All'){
+      
+      numofcountriesbyyear = topcountries %>%
+        select(Year, Country) %>%
+        filter(Country == input$countryInput)
+      
+      print(comma(length(unique(numofcountriesbyyear$Country))))
+      
+    }
+  })
+  
+  # Overall total prize money by country DONE
+  output$totalPrizeMoney2 <- renderText({
+    
+    if(input$countryInput == "All" & input$selectyearcountry == 'All') {
+      
+      totalPrizeMoneyAll = sum(topcountries$TotalPrizeMoney)
+      
+      print(paste("$", comma(sum(totalPrizeMoneyAll)), sep = ""))
+      
+    } else if(input$countryInput != "All" & input$selectyearcountry != 'All'){
+      
+      total = topcountries %>%
+        select(Year, Country, TotalPrizeMoney) %>%
+        group_by(Country) %>%
+        filter(Country == input$countryInput) %>%
+        filter(Year == input$selectyearcountry)
+      
+      print(paste("$", comma(sum(total$TotalPrizeMoney)), sep = ""))
+      
+    } else if(input$countryInput != "All" & input$selectyearcountry == 'All'){
+      
+      total = topcountries %>%
+        select(Year, Country, TotalPrizeMoney) %>%
+        group_by(Country) %>%
+        filter(Country == input$countryInput)
+      
+      print(paste("$", comma(sum(total$TotalPrizeMoney)), sep = ''))
+      
+    } else if(input$countryInput == "All" & input$selectyearcountry != 'All'){
+      
+      total = topcountries %>%
+        select(Year, Country, TotalPrizeMoney) %>%
+        group_by(Country) %>%
+        filter(Year == input$selectyearcountry)
+      
+      print(paste('$', comma(sum(total$TotalPrizeMoney)), sep = ''))
+      
+    }
+    
+  })
+  
+  # HISTOGRAM TPM by year from 1998-2020
+  output$histotpm <- renderPlot({
+    
+    if (input$countryInput != 'All'){
+      topcountries = topcountries %>%
+        filter(Country == input$countryInput)
+    }
+    
+    topcountries %>%
+      group_by(Year) %>%
+      summarise(TotalEarnings = sum(TotalPrizeMoney)) %>%
+      mutate(Condition = ifelse(Year == 2020,TRUE,FALSE)) %>%
+      ggplot(aes(x = Year, y = TotalEarnings, fill = Condition)) +
+      geom_bar(stat = "Identity", color = "black",alpha = 0.75) +
+      geom_text(aes(label = round(TotalEarnings/1E6,2)), vjust = -0.3, size = 3) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+            plot.caption = element_text(size = 10)) + 
+      labs(title = "Total prize money per year*", subtitle = "In millions of dollars", y = element_blank(),x = "Year") +
+      scale_fill_manual(values = c("lightblue","lightblue4")) +
+      guides(fill = "none")
+  })
+  
+  # HISTOGRAM total players by year from 1998-2020
+  output$histoplayer <- renderPlot({
+    
+    if (input$countryInput != 'All'){
+    
+    topcountries = topcountries %>%
+      filter (Country == input$countryInput)
+      
+    }
+      
+    topcountries %>%
+      group_by(Year) %>%
+      summarise(TotalPlayers = sum(NumberofPlayers)) %>%
+      mutate(Condition = ifelse(Year == 2020, TRUE, FALSE)) %>%
+      ggplot(aes(x = Year, y = TotalPlayers, fill = Condition)) +
+      geom_bar(stat = "Identity", color = "black", alpha = 0.75) +
+      geom_text(aes(label = comma(TotalPlayers)), vjust = -0.3, size = 3) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+            plot.caption = element_text(size = 10)) + 
+      labs(title = "Total number of players per year", y = element_blank(), x = "Year",) +
+      scale_fill_manual(values = c("lightblue","lightblue4")) +
+      guides(fill = "none")
+    
+  })
+  
+  # Plotting top earnings by country bar chart
+  output$barcountry <- renderPlot({
+    
+    topcountries[order(topcountries$TotalPrizeMoney, decreasing = TRUE),] %>%
+      slice(1:30) %>%
+      ggplot(aes(reorder(Country, TotalPrizeMoney))) + 
+      geom_bar(aes(weight = TotalPrizeMoney), fill = 'red', col = 'black') + 
+      scale_y_continuous(labels = comma) +
+      coord_flip() +
+      labs(x = "Country", y = "Total Winnings", title = "Top Earnings by Country") +
+      theme_bw(base_size = 16) +
+      theme(axis.text = element_text(size = 15), axis.title = element_text(size = 12))
+    
+  })
+  
+  # END ---
   
   ## Render vgsales output --------------------------------------------------------------------------------------------
   
@@ -180,6 +429,85 @@ shinyServer(function(input, output) {
   })
   
   # END ---
+  
+  ## Kamal: Render dota 2 table output ----------------------------------------------------------------------------------
+  
+  output$table1 = DT::renderDataTable({
+    if (input$dota2input != "All"){
+      dota2data = filter(dota2data, Game == input$dota2input)
+    }
+    
+    DT::datatable(dota2data, options = list(orderClasses = TRUE))
+  })
+  
+  # player and team earnings dashboard ---
+  
+  output$highestprizeforteam <- renderText({
+    print(paste("$", comma(max(dota2data$PrizePerTeam), sep = '')))
+    
+  })
+  
+  output$highestprizeforplayer <- renderText({
+    print(paste("$",comma(max(dota2data$PrizePerPlayer), sep = '')))
+    
+  })
+  
+  output$averageprizeforteam <- renderText({
+    print(paste("$", comma(mean(dota2data$PrizePerTeam), sep = '')))
+    
+  })
+  
+  output$averageprizeforplayer <- renderText({
+    print(paste("$", comma(mean(dota2data$PrizePerPlayer), sep = '')))
+    
+  })
+  
+  # END ---
+  
+  # Plot 1
+  
+  output$barplot = renderPlot({
+    
+    if (input$dota2input != "All"){
+      dota2data = filter(dota2data, Game == input$dota2input)
+    }
+    
+    groupdata = group_by(dota2data, PrizePool) %>%
+      arrange(desc(PrizePool))
+    
+    ggplot(groupdata, aes(reorder(TournamentName, PrizePool))) + 
+      geom_bar(aes(weight = PrizePool), fill = 'tomato1') + 
+      scale_y_continuous(labels = comma) +
+      coord_flip() + 
+      ggtitle("Tournaments") + 
+      xlab("Tournament Name") + 
+      ylab("Prize Pool") + 
+      theme_bw(base_size = 16)
+  })
+  
+  # Plot 2
+  
+  output$lineplot = renderPlot({
+    
+    if (input$dota2input != "All"){
+      dota2data = filter(dota2data, Game == input$dota2input)
+    }
+    
+    groupdata = group_by(dota2data, PrizePerPlayer) %>%
+      arrange(desc(PrizePerPlayer))
+    
+    ggplot(groupdata, aes(reorder(Year, PrizePerPlayer))) + 
+      geom_bar(aes(weight = PrizePerPlayer), fill = 'blue') +
+      scale_y_continuous(labels = comma) + 
+      coord_flip() + 
+      ggtitle("Over the years") + 
+      xlab("Year") + 
+      ylab("Prize Per Player") + 
+      theme_light(base_size = 15) + 
+      theme(axis.text.x = element_text(angle = 0, hjust = 1))
+  })
+  
+  # END -----------------------------------------------------------------------------------------------------------------
   
   ## Aby: render output
   
@@ -304,3 +632,5 @@ shinyServer(function(input, output) {
   # END ---
   
 })
+
+shinyApp (ui = shinyUI, server = shinyServer)
