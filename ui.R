@@ -17,15 +17,89 @@ shinyUI(dashboardPage(
                   titleWidth = 550),
   dashboardSidebar(
     sidebarMenu(
+      menuItem("How to use", tabName = 'howto'),
       menuItem("Overview", tabName = "Overview"),
       menuItem("Teams and Countries", tabName = 'TeamsAndCountries'),
       menuItem("Players", tabName = "Players"),
-      menuItem("Dota2", tabName = "Dota2")
+      menuItem("Games", tabName = "Games")
     )
   ),
   
   dashboardBody(
     tabItems(
+      tabItem(tabName = "howto",
+              navbarPage("How to use this app",
+                         tabPanel(
+                           'Overview',
+                           fluidPage(
+                             mainPanel(
+                               h2('How to use the Overview menu'),
+                               p('1. The', strong('overview'), ' dashboard explores the value of sales globally and also by region: North America (NA), Europe (EU), Japan (JP), and Others. It also has critic score and count, user score and count, name of developers and ratings.'),
+                               p('2. There are two drop-down menus that you can filter based on what you are looking for: Platform and Genre.'),
+                               p('3. The table will filter accordingly based on your selection. The dashboard below will also filter accordingly.'),
+                               p('4. The first chart is a vertical bar graph that plots the genre against Global Sales. This chart', strong('only reacts to the Platform filter.')),
+                               p('5. The second chart is a vertical bar graph that plots the platform against Global Sales. This chart',  strong('only reacts to the Genre filter.')),
+                               p('6. You can use the search bar at the top right of the table to search specifically what you are looking for within the table, assuming that it is in the table.')
+                             )
+                           )
+                         ),
+                         tabPanel(
+                           'Consoles',
+                           fluidPage(
+                             mainPanel(
+                               h2('How to use the Consoles menu'),
+                               p('1.'),
+                               p('2.'),
+                               p('3.')
+                             )
+                           )
+                         ),
+                         tabPanel(
+                           'Teams and Countries',
+                           fluidPage(
+                             mainPanel(
+                               h2('How to use the Teams and Countries menu'),
+                               p('1. This dashboard has 3 tabs: Team, Countries and Plots for Countries.'),
+                               p('2. In the', strong('Teams'), (' tab, two drop-down menus are available that will filter the table below accordingly.')),
+                               p('3. The first chart is a horizontal bar graph that plots the Total Winnings of a team against the Team Name. This chart', strong('only reacts to the Year filter.')),
+                               p('4. You can see the top 10 teams who earns the highest overall or in a specific year if the Year menu is filtered.'),
+                               p('5. The second chart is a horizontal bar graph that plots the Winnings against the Year. This chart',  strong('only reacts to the Team filter.')),
+                               p('6. You can see how much a team earns through the years or in a single year if the Team menu is filtered.'),
+                               p('7. In the', strong('Countries'), (' tab, two drop-down menus are available that will filter the table below it accordingly.')),
+                               p('8. The mini dashboard below the table gives you a summarized view of the table data.'),
+                               p('9. You can use the search bar at the top right of the table to search specifically what you are looking for within the table, assuming that it is in the table.'),
+                               p('10. Lastly, in the', strong('Plots for Countries'), (' tab, there are 3 charts, which shows the how much total prize money is involved each year, the number of players that have participated in tournaments, and the top 11 countries ranked by how much they have earned.'))
+                             )
+                           )
+                         ),
+                         tabPanel(
+                           'Players',
+                           fluidPage(
+                             mainPanel(
+                               h2('How to use the Players menu'),
+                               p('1.'),
+                               p('2.'),
+                               p('3.')
+                             )
+                           )
+                         ),
+                         tabPanel(
+                           'Games',
+                           fluidPage(
+                             mainPanel(
+                               h2('How to use the Games menu'),
+                               p('1. This dashboard only has 1 filter, Game. This will filter the type of game you want to see and all the tournaments that this game has organized or hosted during the respective year.'),
+                               p('2. If a filter is selected, the table, mini dashboard, and two charts below will react accordingly.'),
+                               p('3. The first chart shows, in descending order, the top tournaments by Prize Pool filtered by game if filter is applied.'),
+                               p('4. The second chart shows how much one player earns on average each year.'),
+                               p('5. You can use the search at the top right of the table to search specifically what you are looking for within the table, assuming that it is in the table.')
+                             )
+                           )
+                         )
+                
+              )
+        
+      ),
       tabItem(tabName = "Overview",
               navbarPage("Video Games Sales by Region",
                          tabPanel(
@@ -70,7 +144,7 @@ shinyUI(dashboardPage(
                            ),
                          )
               ),
-      tabItem(tabName = "Dota2",
+      tabItem(tabName = "Games",
               navbarPage("Tournaments and Prize Pools",
                          tabPanel(
                            "Games",

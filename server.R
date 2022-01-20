@@ -375,7 +375,7 @@ shinyServer(function(input, output) {
   
   # END ---
   
-  ## Render vgsales output --------------------------------------------------------------------------------------------
+  ## Render vgsales table and chart output --------------------------------------------------------------------------------------------
   
   # Plot data table
   
