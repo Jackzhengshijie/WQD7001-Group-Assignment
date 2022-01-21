@@ -14,7 +14,6 @@ library("tidyverse")
 library(readr)
 library(readxl)
 
-
 # Load dataset player earnings
 # import data and rename column names
 names <- c('Year', 'PlayerID', 'PlayerName', 'TotalPrizeMoneyYear', 'OverallPrizeMoney', 'TotalPercentage')
