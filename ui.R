@@ -101,6 +101,7 @@ shinyUI(dashboardPage(
                                   h4("Overall Prize Money"))
                                )
                              ),
+                             plotOutput("topPlayers")
                            )
                            )))
       

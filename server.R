@@ -136,11 +136,54 @@ shinyServer(function(input, output) {
     
     ggplot(data.frame(x = players$total_playerName), aes(x = x)) +
       geom_histogram(binwidth = 10,
+                     origin = 0,
                      fill = "#1D7685",
                      color = "white") +
       ylab("Frequency") +
       xlab("Total Players")
   
+  })
+  
+  output$topPlayers <- renderPlot({
+    
+    if(input$selected_year == "All") {
+      
+      options("scipen"=100, "digits"=7)
+      max <- esport_earnings %>%
+        group_by(Year) %>%
+        slice(which.max(TotalPrizeMoneyYear)) %>%
+        arrange(desc(TotalPrizeMoneyYear))
+      
+      ggplot(data = max) +
+        geom_col(mapping = aes(x=PlayerName, y=TotalPrizeMoneyYear, fill=Year)) +
+        coord_flip() +
+        scale_y_continuous(name="TotalPrizeMoney", limits=c(0, 3163536)) +
+        labs(
+          title = "Top Earners from 1998-2020",
+          y = "Players ID"
+        )
+      
+    } else {
+      
+      options("scipen"=100, "digits"=7)
+      top10players <- esport_earnings %>%
+        group_by(Year) %>%
+        arrange(desc(TotalPrizeMoneyYear), .by_group = TRUE) %>%
+        top_n(10) %>%
+        filter(Year==input$selected_year)
+      
+      top10players %>%
+        ggplot() +
+        geom_col(mapping = aes(x=PlayerID, y=as.character(OverallPrizeMoney), fill=PlayerID)) +
+        theme_minimal() +
+        coord_flip() +
+        labs(
+          title = "Top 10 Players",
+          subtitle = "Based on Total Prize Money",
+          x = "Player ID",
+          y = "Prize Money Won"
+        )
+    }
   })
   
 })
