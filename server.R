@@ -70,12 +70,14 @@ shinyServer(function(input, output) {
     
     if(input$selected_year == "All") {
       
+      options("scipen"=100, "digits"=7)
       totalPrizeMoneyAll = sum(esport_earnings$TotalPrizeMoneyYear)
       
       print(paste("$", totalPrizeMoneyAll, sep = ""))
       
     } else {
       
+      options("scipen"=100, "digits"=7)
       total = esport_earnings %>%
         group_by(Year) %>%
         summarise(total = sum(TotalPrizeMoneyYear)) %>%
@@ -115,7 +117,10 @@ shinyServer(function(input, output) {
       group_by(Year) %>%
       summarize(average_prizeMoney=mean(TotalPrizeMoneyYear)) %>%
       ggplot() +
-      geom_col(mapping = aes(x=Year, y=average_prizeMoney))
+      geom_col(mapping = aes(x=Year, y=average_prizeMoney)) +
+      labs(
+        y = "Average Prize Money"
+      )
   })
   
   output$prizeDistribution <- renderPlot({
@@ -124,9 +129,14 @@ shinyServer(function(input, output) {
       geom_point(size = 3) +
       geom_smooth(method = lm) +
       geom_density2d(alpha = .5) +
-      theme(legend.position = "bottom")
+      theme(legend.position = "bottom") +
+      labs(
+        y = "Overall Prize Money",
+        x = "Total Prize Money"
+      )
   })
   
+  # Total Players
   output$totalPlayers <- renderPlot({
     
     # Total players from 1998-2020
@@ -144,6 +154,7 @@ shinyServer(function(input, output) {
   
   })
   
+  # Visualize top players
   output$topPlayers <- renderPlot({
     
     if(input$selected_year == "All") {
@@ -178,7 +189,7 @@ shinyServer(function(input, output) {
         theme_minimal() +
         coord_flip() +
         labs(
-          title = "Top 10 Players",
+          title = "Top Earners",
           subtitle = "Based on Total Prize Money",
           x = "Player ID",
           y = "Prize Money Won"
