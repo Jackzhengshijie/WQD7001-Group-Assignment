@@ -19,6 +19,7 @@ shinyUI(dashboardPage(
     sidebarMenu(
       menuItem("How to use", tabName = 'howto'),
       menuItem("Overview", tabName = "Overview"),
+      menuItem("Consoles", tabName = "Consoles"),
       menuItem("Teams and Countries", tabName = 'TeamsAndCountries'),
       menuItem("Players", tabName = "Players"),
       menuItem("Games", tabName = "Games")
@@ -29,6 +30,18 @@ shinyUI(dashboardPage(
     tabItems(
       tabItem(tabName = "howto",
               navbarPage("How to use this app",
+                         tabPanel(
+                           'Introduction',
+                           fluidPage(
+                             mainPanel(
+                               h2('Welcome!'),
+                               p('1. Welcome to our app! Here, we will explore the video games industry and what it has offered to our fellow professional esports athletes and to the community of gamers worldwide.'),
+                               p('2. Refer to the tabs to the right on how to operate our app.'),
+                               p('3. Use the sidebar panels on the left to maneuver across the different aspects of this app.'),
+                               p('4. We hope this will give valuable insights to our users. Enjoy!'),
+                             )
+                           )
+                         ),
                          tabPanel(
                            'Overview',
                            fluidPage(
@@ -48,9 +61,9 @@ shinyUI(dashboardPage(
                            fluidPage(
                              mainPanel(
                                h2('How to use the Consoles menu'),
-                               p('1.'),
-                               p('2.'),
-                               p('3.')
+                               p('1. There are four drop-down menus that you can use to filter the table below: Console, Game, Genre, and Publisher.'),
+                               p('2. It is recommended to filter the type of Console you want to see first, either PS4 or XBox.'),
+                               p('3. The table will filter accordingly to the selections that you have given.')
                              )
                            )
                          ),
@@ -77,9 +90,12 @@ shinyUI(dashboardPage(
                            fluidPage(
                              mainPanel(
                                h2('How to use the Players menu'),
-                               p('1.'),
-                               p('2.'),
-                               p('3.')
+                               p('1. There are two tabs available: EDA and Summary. '),
+                               p('2. In the', strong('EDA '), ('tab, there is one drop-down menu indicating the year you wish to filter.')),
+                               p('3. The table will filter according to the year selected and you will be able to see top players by their total and overall earnings.'),
+                               p('4. The three charts below the table'), strong('DO NOT'), ('react to the Year filter. These are static charts that explain the evolution of prize money, the distribution, and the frequency of number of players in tournaments.'),
+                               p('5. In the', strong('Summary'), ('tab, there is one drop-down menu indicating the year you wish to filter.')),
+                               p('6. The Year selected will filter the three mini dashboards and the bar chart below it.')
                              )
                            )
                          ),
@@ -96,93 +112,173 @@ shinyUI(dashboardPage(
                              )
                            )
                          )
-                
               )
-        
-      ),
-      tabItem(tabName = "Overview",
-              navbarPage("Video Games Sales by Region",
-                         tabPanel(
-                           "Sales",
-                           fluidPage(
-                             selectInput(
-                               inputId = "vgsalesinput",
-                               label = 'Platform',
-                               choices = c('All', unique(vgs$Platform))
-                             ),
-                             selectInput(
-                               inputId = 'vginput2',
-                               label = 'Genre',
-                               choices = c('All', 'Platform', 'Sports', 'Racing', 'Adventure', 'Role-Playing', 'Puzzle', 'Misc', 'Shooter', 'Action', 'Strategy', 'Fighting', 'Simulation')
-                             ),
-                             mainPanel(
-                               title = "Video Games Sales", fluid = TRUE, DT::dataTableOutput('tablevgsales'),
-                               theme = 'custom.css',
-                               wellPanel(
-                                 tags$table(
-                                   id = "overalldashboard", style = 'width: 100%',
-                                   tags$td(
-                                     column(3, h3(textOutput("totalgames")),
-                                            h4("Total Number of Games"))),
-                                   
-                                   tags$td(
-                                     column(3, offset = 3, h3(textOutput("totalplatform")),
-
-                                            h4("Total Number of Platforms"))),
-                                   tags$td(
-                                     column(3, offset = 3, h3(textOutput("totalpublisher")),
-                                            h4("Total Number of Publishers"))),
-                                   tags$td(
-                                     column(3, offset = 3, h3(textOutput("totalgenre")),
-                                            h4("Types of Genre")))
-                                 )
-                               ),
-                               plotOutput('GlobalSales'),
-                               plotOutput('genre')
-                             )
-                             )
+              ),
+              tabItem(tabName = "Overview",
+                      navbarPage(title = "Video Games Sales by Region",
+                                 tabPanel(
+                                   title = "Sales",
+                                   fluidPage(
+                                     selectInput(
+                                       inputId = "vgsalesinput",
+                                       label = 'Platform',
+                                       choices = c('All', unique(vgs$Platform))
+                                       ),
+                                     selectInput(
+                                       inputId = 'vginput2',
+                                       label = 'Genre',
+                                       choices = c('All', 'Platform', 'Sports', 'Racing', 'Adventure', 'Role-Playing', 'Puzzle', 'Misc', 'Shooter', 'Action', 'Strategy', 'Fighting', 'Simulation')
+                                       ),
+                                     mainPanel(
+                                       title = "Video Games Sales", fluid = TRUE, DT::dataTableOutput('tablevgsales'),
+                                       wellPanel(
+                                         tags$table(
+                                           id = 'overviewplot', style = 'width: 100%',
+                                           tags$td(
+                                             h2(textOutput("totalgames")),
+                                             h4("Total Number of Games")
+                                           ),
+                                           tags$td(
+                                             h2(textOutput('sumofglobalsales')),
+                                             h4("Total Global Sales, in millions")
+                                           ),
+                                           tags$td(
+                                             h2(textOutput("totalplatform")),
+                                             h4("Total Number of Platforms")
+                                           ),
+                                           tags$td(
+                                             h2(textOutput("totalpublisher")),
+                                             h4("Total Number of Publishers")
+                                           ),
+                                           tags$td(
+                                             h2(textOutput("totalgenre")),
+                                             h4("Types of Genre")
+                                           )
+                                         )
+                                       ),
+                                       splitLayout(
+                                         plotOutput('GlobalSales'),
+                                         plotOutput('genre')
+                                       )
+                                       )
+                                     )
                            ),
                          )
               ),
-      tabItem(tabName = "Games",
-              navbarPage("Tournaments and Prize Pools",
-                         tabPanel(
-                           "Games",
-                           fluidPage(
-                             selectInput(
-                               inputId = "dota2input",
-                               label = "Game",
-                               choices = c('All', unique(dota2data$Game))
-                            ),
-                            mainPanel(
-                              title = 'Dota2', fluid = TRUE, DT::dataTableOutput('table1'),
-                              theme = 'custom.css',
-                              wellPanel(
-                                tags$table(
-                                  id = "anotherdashboard", style = 'width: 100%',
-                                  tags$td(
-                                    column(3, h3(textOutput("highestprizeforteam")),
-                                           h4("Highest Prize for a team"))),
-                                  
-                                  tags$td(
-                                    column(3, offset = 3, h3(textOutput("highestprizeforplayer")),
-                                           
-                                           h4("Highest Prize for a player"))),
-                                  tags$td(
-                                    column(3, offset = 5, h3(textOutput("averageprizeforteam")),
-                                           h4("Average Prize for a team"))),
-                                  tags$td(
-                                    column(3, offset = 5, h3(textOutput("averageprizeforplayer")),
-                                           h4("Average Prize for a player")))
-                                )
-                              ),
-                              plotOutput('barplot'),
-                              plotOutput('lineplot')
+              tabItem(tabName = "Games",
+                      navbarPage("Tournaments and Prize Pools",
+                                 tabPanel(
+                                   "Games",
+                                   fluidPage(theme = 'custom.css',
+                                     selectInput(
+                                      inputId = "dota2input",
+                                      label = "Game",
+                                      choices = c('All', unique(dota2data$Game))
+                                      ),
+                                     mainPanel(
+                                      title = 'Dota2', fluid = TRUE, DT::dataTableOutput('table1'),
+                                      wellPanel(
+                                        tags$div(
+                                          id = 'plotgames', style = 'width: 100%',
+                                          tags$table(
+                                            id = 'plotgames2',
+                                            tags$td(
+                                              column(3, offset = 3,
+                                                     h2(textOutput("highestprizeforteam")),
+                                                     h4("Highest Prize for a team")
+                                              )
+                                              ),
+                                            tags$td(
+                                              column(3, offset = 3,
+                                                     h2(textOutput("highestprizeforplayer")),
+                                                     h4("Highest Prize for a player")
+                                              )
+                                            ),
+                                            tags$td(
+                                              column(3, offset = 3,
+                                                     h2(textOutput("averageprizeforteam")),
+                                                     h4("Average Prize for a team")
+                                              )
+                                            ),
+                                            tags$td(
+                                              column(3, offset = 3,
+                                                     h2(textOutput("averageprizeforplayer")),
+                                                     h4("Average Prize for a player")
+                                              )
+                                            )
+                                          )
+                                        )
+
+                                      ),
+                                      plotOutput('barplot'),
+                                      plotOutput('lineplot')
+                                
+                                    )
                             )
                             )
                           )
-                )
-        ),
+                ),
+      tabItem(tabName = 'Consoles',
+              navbarPage('Video Game sales by Consoles',
+                         tabPanel(
+                           'Consoles',
+                           fluidPage(
+                             column(3,
+                                    selectInput("console",
+                                                "Console:",
+                                                c("All",
+                                                  unique(as.character(GS_DF$console))))
+                             ),
+                             column(3,
+                                    selectInput("genre",
+                                                "Genre:",
+                                                c("All",
+                                                  unique(as.character(GS_DF$genre))))
+                             ),
+                             column(3,
+                                    selectInput("publisher",
+                                                "Publisher:",
+                                                c("All",
+                                                  unique(as.character(GS_DF$publisher))))
+                             ),
+                             column(3,
+                                    selectInput("game",
+                                                "Game:",
+                                                c("All",
+                                                  unique(as.character(GS_DF$game))))
+                             )
+                           ),
+                           mainPanel(
+                             title = "Consoles", fluid = TRUE, DT::dataTableOutput("table"),
+                             wellPanel(
+                               tags$div(id = 'plotconsole', style = 'width: 100%',
+                                        tags$table(
+                                          id = 'plotconsole2',
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("ps4games")),
+                                                   h4("Total Number of Games on PS4")
+                                            )
+                                          ),
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("xboxgames")),
+                                                   h4("Total Number of Games on XBox")
+                                            )
+                                          ),
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("consoleglobalsales")),
+                                                   h4("Total Global Sales, in millions")
+                                            )
+                                          )
+                                        )
+                               )
+                             )
+                           )
+                         )
+              )
+      ),
       tabItem(tabName = "TeamsAndCountries",
               navbarPage("Teams and Countries",
                          tabPanel(
@@ -200,14 +296,16 @@ shinyUI(dashboardPage(
                              ),
                              mainPanel(
                                title = 'Teams', fluid = TRUE, DT::dataTableOutput('teamtable'),
-                               plotOutput('barteam'),
-                               plotOutput('barplot2')
+                               splitLayout(
+                                 plotOutput('barteam'),
+                                 plotOutput('barplot2')
+                               )
                              )
                              )
                           ),
                          tabPanel(
                            "Countries",
-                           fluidPage(
+                           fluidPage(theme = 'custom.css',
                              selectInput(
                                inputId = 'selectyearcountry',
                                label = 'Year',
@@ -220,23 +318,31 @@ shinyUI(dashboardPage(
                              ),
                              mainPanel(
                                title = 'Countries', fluid = TRUE, DT::dataTableOutput('countrytable'),
-                               theme = "custom.css",
                                wellPanel(
-                                 tags$table(
-                                   id = "tableDashboard", 
-                                   tags$td(
-                                     column(3, h3(textOutput("totalPlayer2")),
-                                            h4("Total Number of Players"))),
-                                   
-                                   tags$td(
-                                     column(3, offset = 3, h3(textOutput("totalCountry")),
-                                            h4("Total Countries Participated"))),
-                                   
-                                   tags$td(
-                                     column(3, offset = 5, h3(textOutput("totalPrizeMoney2")),
-                                            h4("Total Prize Money by Country"))),
-                                 )
-                               )
+                                 tags$div(id = 'plotteam', style = 'width: 100%',
+                                        tags$table(
+                                          id = 'plotteam2',
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("totalPlayer2")),
+                                                   h4("Total Number of Players")
+                                          )
+                                          ),
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("totalCountry")),
+                                                   h4("Total Countries Participated")
+                                            )
+                                          ),
+                                          tags$td(
+                                            column(3, offset = 3,
+                                                   h3(textOutput("totalPrizeMoney2")),
+                                                   h4("Total Prize Money by Country")
+                                            )
+                                          )
+                                        )
+                                      )
+                             )
                              )
                            )
                          ),
@@ -253,8 +359,6 @@ shinyUI(dashboardPage(
                              )
                            )
                          )
-                
-        
       ),
       tabItem(tabName = "Players",
               navbarPage("Player's Earnings",
@@ -263,25 +367,30 @@ shinyUI(dashboardPage(
                            fluidPage(
                              selectInput("showYear",
                                          label = ("Select a Year"),
-                                         choices = unique(esport_earnings_players$Year)),
-                             DTOutput("earnings_table"),
-                             tags$div(id = "plot", style = "width: 100%",
-                                      tags$table(
-                                        id = "ggPlot", 
-                                        tags$td(
-                                          h4("Average Prize Money From 1998-2020"),
-                                          plotOutput("averagePrizeMoney")
+                                         choices = c('2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008', '2007', '2006', '2005', '2004', '2003', '2002', '2001', '2000', '1999', '1998')
+                                         ),
+                             mainPanel(
+                               title = "Players", fluid = TRUE, DT::dataTableOutput("earnings_table"),
+                               tags$div(id = "plot", style = "width: 100%",
+                                        tags$table(
+                                          id = "ggPlot", 
+                                          tags$td(
+                                            h4("Average Prize Money From 1998-2020"),
+                                            plotOutput("averagePrizeMoney")
+                                          ),
+                                        
+                                          tags$td(
+                                            h4("Prize Money Distribution"),
+                                            plotOutput("prizeDistribution")
+                                          ),
+                                        
+                                          tags$td(
+                                            h4("Total Player Particapted"),
+                                            plotOutput("totalPlayers")
+                                          )
                                         ),
-                                        tags$td(
-                                          h4("Prize Money Distribution"),
-                                          plotOutput("prizeDistribution")
-                                        ),
-                                        tags$td(
-                                          h4("Total Player Particapted"),
-                                          plotOutput("totalPlayers")
-                                        )
-                                        ),
-                                      ),
+                                      )
+                             )
                              )
                            ),
                          tabPanel(
@@ -290,29 +399,32 @@ shinyUI(dashboardPage(
                              theme = "custom.css",
                              selectInput("selected_year",
                                          label = ("Select a Year"),
-                                         choices = c("All", unique(esport_earnings_players$Year))
+                                         choices = c("All", '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008', '2007', '2006', '2005', '2004', '2003', '2002', '2001', '2000', '1999', '1998')
                                          ),
                              wellPanel(
                                tags$table(
-                                 id = "tableDashboard",
+                                 id = 'tableDashboard',
                                  tags$td(
                                    h3(textOutput("totalPlayer")),
-                                   h4("Total Players")),
+                                   h4("Total Players"),
+                                 ),
                                  tags$td(
                                    h3(textOutput("totalPrizeMoney")),
-                                   h4("Total Prize Money")),
+                                   h4("Total Prize Money"),
+                                 ),
                                  tags$td(
                                    h3(textOutput("overallPrizeMoney")),
-                                   h4("Overall Prize Money"))
+                                   h4("Overall Prize Money (Cumulative)")
                                  )
-                           )
+                               )
+                           ),
+                           plotOutput('topPlayers')
                            )
                            )
                          )
               )
     )
-      
-    )
   )
+)
 )
 

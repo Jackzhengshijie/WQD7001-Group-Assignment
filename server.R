@@ -15,44 +15,47 @@ library(readxl)
 library(scales)
 library(reshape)
 library(ggplot2)
+library(janitor)
 
 # Load dataset player earnings
 # Aby: import data and rename column names
 names <- c('Year', 'PlayerID', 'PlayerName', 'TotalPrizeMoneyYear', 'OverallPrizeMoney', 'TotalPercentage')
-esport_earnings_players <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\eSports Earnings 1998-2020.xlsx", sheet = "Top 100 Players 1998-2020", col_names = names, skip = 1)
+esport_earnings_players <- read_excel("Datasets\\eSports Earnings 1998-2020.xlsx", sheet = "Top 100 Players 1998-2020", col_names = names, skip = 1)
 esport_earnings <- esport_earnings_players %>%
   mutate(PlayerID=as.factor(PlayerID), PlayerName=as.factor(PlayerName), 
          TotalPrizeMoneyYear=as.numeric(TotalPrizeMoneyYear), OverallPrizeMoney=as.numeric(OverallPrizeMoney))
 
+esport_earnings_2 = as.data.frame(esport_earnings_players)
+esport_earnings_2$TotalPrizeMoneyYear = as.numeric(esport_earnings_2$TotalPrizeMoneyYear)
+esport_earnings_2$OverallPrizeMoney = as.numeric(esport_earnings_2$OverallPrizeMoney)
+
 # For vgsales input
-df1 = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\vgsales.csv")
+df1 = read.csv("Datasets\\vgsales.csv")
 
 # Iesha: For Team and countries input
-topteams <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\topteamscleaned.xlsx")
+topteams <- read_excel("Datasets\\topteamscleaned.xlsx")
 yearchoice <- c("All", unique(topteams$Year))
 teamchoice <- c("All", unique(topteams$Team))
 
-topcountries <- read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\topcountriescleaned2.xlsx")
+topcountries <- read_excel("Datasets\\topcountriescleaned2.xlsx")
 colnames(topcountries) = c('Year', 'Country', 'TotalPrizeMoney', 'NumberofPlayers')
 
 # Kamal: upload dota 2 data and clean
 
-dota2data = read_excel("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\Largest Overall Prize Pools in Esports.xlsx")
+dota2data = read_excel("Datasets\\Largest Overall Prize Pools in Esports.xlsx")
 dota2data = as.data.frame(dota2data)
 dota2data = select(dota2data, -c("No.")) 
 
+colnames(dota2data) = c('TournamentName', "PrizePool", "Game", "NumberOfTeams", "NumberOfPlayers")
+
 dota2data = dota2data %>%
-  mutate(NumberOfPlayers2 = ifelse(dataset$NumberOfPlayers == 0, 2, dataset$NumberOfPlayers))
-  
+  mutate(NumberOfPlayers2 = ifelse(dota2data$NumberOfPlayers == 0, 2, dota2data$NumberOfPlayers))
+
 dota2data = dota2data %>%
-  mutate(NumberofTeams4 = ifelse(is.na(dataset$NumberOfTeams), 1, dataset$NumberOfTeams))
+  mutate(NumberOfTeams4 = ifelse(is.na(dota2data$NumberOfTeams), 1, dota2data$NumberOfTeams))
 
-colnames(dota2data) = c('TournamentName', "PrizePool", "Game", "NumberOfTeams", "NumberOfPlayers", "NumberofPlayers2", 'NumberofTeams2')
-
-dota2data$NumberofTeams2 = as.numeric(dota2data$NumberofTeams2)
-
-dota2data = dota2data %>% mutate(PrizePerPlayer = PrizePool / NumberofPlayers2) %>% # create new prize per player column
-  mutate(PrizePerTeam = PrizePool / NumberofTeams2) # Create new prize per team column
+dota2data = dota2data %>% mutate(PrizePerPlayer = PrizePool / NumberOfPlayers2) %>% # create new prize per player column
+  mutate(PrizePerTeam = PrizePool / NumberOfTeams4) # Create new prize per team column
 
 dota2data$PrizePerPlayer = as.integer(dota2data$PrizePerPlayer)
 dota2data$PrizePerTeam = as.integer(dota2data$PrizePerTeam)
@@ -74,14 +77,40 @@ dota2data
 
 # END dota 2 clean -------------------------------------------------------------------------------------------------------------------
 
+# Sharmin: Upload console games data
+
+#Loading Data
+
+GameSales<-read.csv("Datasets\\GamesSales.csv")
+
+#cleaning data
+
+Gamesales<-GameSales
+clean1<-clean_names(Gamesales)
+
+clean2<-clean1%>%
+  remove_empty(which=c("rows"))%>%
+  remove_empty(which=c("cols"))
+
+clean2[clean2=="N/A"]<-NA
+clean3<-clean2[complete.cases(clean2),]
+clean3$global[clean3$global==0.00]<-NA
+clean4<-clean3[complete.cases(clean3),]
+
+#Final Data Frame
+
+GS_DF<-clean4
+
+# END --------------------------------------------
+
 ## Upload vgsales and clean
 
-vgs = read.csv("C:\\Users\\KSAR\\OneDrive\\Documents\\FnaticsGroupProjectv2\\WQD7001-Group-Assignment-main\\vgsales.csv")
+vgs = read.csv("Datasets\\vgsales.csv")
 colnames(vgs)
 str(vgs)
 vgs$Genre = as.factor(vgs$Genre)
 
-# END vgs ---
+# END vgs --------------------------------------
 
 # Define server logic
 shinyServer(function(input, output) {
@@ -116,6 +145,10 @@ shinyServer(function(input, output) {
   output$totalgames <- renderText({
     print(comma(sum(length(unique(vgs$Name)))))
     
+  })
+  
+  output$sumofglobalsales = renderText({
+    print(paste("$", comma(sum(vgs$Global_Sales)), sep = ''))
   })
   
   output$totalplatform <- renderText({
@@ -430,6 +463,44 @@ shinyServer(function(input, output) {
   
   # END ---
   
+## Sharmin: Render xbox sales table and charts output
+  
+  output$table <- DT::renderDataTable(DT::datatable({
+    data <- GS_DF
+    if (input$game != "All") {
+      data <- data[data$game == input$game,]
+    }
+    if (input$genre != "All") {
+      data <- data[data$genre == input$genre,]
+    }
+    if (input$publisher != "All") {
+      data <- data[data$publisher == input$pulisher,]
+    }
+    if (input$console != "All") {
+      data <- data[data$console == input$console,]
+    }
+    data
+  }))
+  
+  output$ps4games = renderText({
+    print(comma(length(GS_DF$console == "PS4")))
+    
+  })
+  
+  output$xboxgames = renderText({
+    print(comma(length(GS_DF$console == "XBoxOne")))
+  })
+  
+  output$consoleglobalsales = renderText({
+    
+    if (input$console != "All"){
+      GS_DF = GS_DF %>%
+        filter(console == input$console)
+    }
+    
+    print(paste("$", comma(sum(GS_DF$global), sep = '')))
+  })
+  
   ## Kamal: Render dota 2 table output ----------------------------------------------------------------------------------
   
   output$table1 = DT::renderDataTable({
@@ -482,7 +553,8 @@ shinyServer(function(input, output) {
       ggtitle("Tournaments") + 
       xlab("Tournament Name") + 
       ylab("Prize Pool") + 
-      theme_bw(base_size = 16)
+      theme_bw(base_size = 16) +
+      theme(axis.text.x = element_text(angle = 0, hjust = 1))
   })
   
   # Plot 2
@@ -503,7 +575,7 @@ shinyServer(function(input, output) {
       ggtitle("Over the years") + 
       xlab("Year") + 
       ylab("Prize Per Player") + 
-      theme_light(base_size = 15) + 
+      theme_light(base_size = 16) + 
       theme(axis.text.x = element_text(angle = 0, hjust = 1))
   })
   
@@ -519,13 +591,13 @@ shinyServer(function(input, output) {
     output  
   })
   
-  output$earnings_table <- renderDT({
+  output$earnings_table <- renderDataTable ({
     
-    esport_earnings %>%
-      select(PlayerID, PlayerName, TotalPrizeMoneyYear, OverallPrizeMoney, TotalPercentage) %>%
-      arrange(desc(TotalPrizeMoneyYear)) %>%
-      datatable(rownames = input$showYear,
-                extensions = "Responsive")
+    if (input$showYear != 'All'){
+      esport_earnings = filter(esport_earnings, Year == input$showYear)
+    }
+    
+    DT::datatable(esport_earnings, options = list(orderClasses = TRUE))
     
   })
   
@@ -533,20 +605,20 @@ shinyServer(function(input, output) {
   output$totalPlayer <- renderText({
     if(input$selected_year == "All") {
       
-      total_players_overall = esport_earnings$PlayerName
+      total_players_overall = esport_earnings_2$PlayerName
       
       total_players_overall = length(total_players_overall)
       
-      print(total_players_overall)
+      print(comma(total_players_overall))
       
       
     } else {
       
-      total_players <- esport_earnings %>% 
+      total_players <- esport_earnings_2 %>% 
         select(Year, PlayerName) %>%
         filter(Year == input$selected_year)
       
-      print(length(unique(total_players$PlayerName)))
+      print(comma(length(unique(total_players$PlayerName))))
       
     }
   })
@@ -556,21 +628,23 @@ shinyServer(function(input, output) {
     
     if(input$selected_year == "All") {
       
-      totalPrizeMoneyAll = sum(esport_earnings$TotalPrizeMoneyYear)
+      options("scipen"=100, "digits"=7)
+      totalPrizeMoneyAll = sum(esport_earnings_2$TotalPrizeMoneyYear)
       
-      print(paste("$", totalPrizeMoneyAll, sep = ""))
+      print(paste("$", comma(totalPrizeMoneyAll), sep = ""))
       
     } else {
       
+      options("scipen"=100, "digits"=7)
       total = esport_earnings %>%
         group_by(Year) %>%
         summarise(total = sum(TotalPrizeMoneyYear)) %>%
         filter(Year==input$selected_year) %>%
         select(total)
       
-      print(paste("$", as.character(total), sep=""))
+      print(paste("$", total, sep=""))
     }
-      
+    
   })
   
   # Overall prize money by year
@@ -578,9 +652,9 @@ shinyServer(function(input, output) {
     
     if(input$selected_year == "All") {
       
-      overallPrizeMoney = sum(esport_earnings$OverallPrizeMoney)
+      overallPrizeMoney = sum(esport_earnings_2$OverallPrizeMoney)
       
-      print(paste("$", overallPrizeMoney, sep = ""))
+      print(paste("$", comma(overallPrizeMoney), sep = ""))
       
     } else {
       
@@ -590,7 +664,7 @@ shinyServer(function(input, output) {
         filter(Year==input$selected_year) %>%
         select(total)
       
-      print(paste("$", as.character(total), sep=""))
+      print(paste("$", total, sep=""))
     }
     
   })
@@ -601,7 +675,11 @@ shinyServer(function(input, output) {
       group_by(Year) %>%
       summarize(average_prizeMoney=mean(TotalPrizeMoneyYear)) %>%
       ggplot() +
-      geom_col(mapping = aes(x=Year, y=average_prizeMoney))
+      geom_col(mapping = aes(x=Year, y=average_prizeMoney)) +
+      scale_y_continuous(labels = comma) +
+      labs(
+        y = "Average Prize Money"
+      )
   })
   
   output$prizeDistribution <- renderPlot({
@@ -610,9 +688,16 @@ shinyServer(function(input, output) {
       geom_point(size = 3) +
       geom_smooth(method = lm) +
       geom_density2d(alpha = .5) +
-      theme(legend.position = "bottom")
+      theme(legend.position = "right") +
+      scale_x_continuous(labels = comma) +
+      scale_y_continuous(labels = comma) +
+      labs(
+        y = "Overall Prize Money",
+        x = "Total Prize Money"
+      )
   })
   
+  # Total Players
   output$totalPlayers <- renderPlot({
     
     # Total players from 1998-2020
@@ -622,11 +707,55 @@ shinyServer(function(input, output) {
     
     ggplot(data.frame(x = players$total_playerName), aes(x = x)) +
       geom_histogram(binwidth = 10,
+                     origin = 0,
                      fill = "#1D7685",
                      color = "white") +
       ylab("Frequency") +
       xlab("Total Players")
+    
+  })
   
+  # Visualize top players
+  output$topPlayers <- renderPlot({
+    
+    if(input$selected_year == "All") {
+      
+      groupdata2 = esport_earnings_2 %>%
+        arrange(desc(TotalPrizeMoneyYear)) %>%
+        slice_max(n = 20, order_by = Year) %>%
+        top_n(n = 20)
+      
+      ggplot(groupdata2, aes(reorder(PlayerName, TotalPrizeMoneyYear))) + 
+        geom_bar(aes(weight = TotalPrizeMoneyYear), fill = 'lightgreen') +
+        scale_y_continuous(labels = comma) + 
+        coord_flip() + 
+        ggtitle("Total Prize Money Won by Players") + 
+        xlab("Player Name") + 
+        ylab("Winnings") + 
+        theme_minimal(base_size = 16) + 
+        theme(axis.text.x = element_text(angle = 0, hjust = 1))
+      
+    } else {
+      
+      options("scipen"=100, "digits"=7)
+      top10players <- esport_earnings %>%
+        group_by(Year) %>%
+        arrange(desc(TotalPrizeMoneyYear), .by_group = TRUE) %>%
+        top_n(10) %>%
+        filter(Year==input$selected_year)
+      
+      top10players %>%
+        ggplot() +
+        geom_col(mapping = aes(x=PlayerID, y=as.character(OverallPrizeMoney), fill=PlayerID)) +
+        theme_minimal() +
+        coord_flip() +
+        labs(
+          title = "Top Earners",
+          subtitle = "Based on Total Prize Money",
+          x = "Player ID",
+          y = "Prize Money Won"
+        )
+    }
   })
   
   # END ---
